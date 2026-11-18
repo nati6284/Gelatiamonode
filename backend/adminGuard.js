@@ -1,6 +1,6 @@
-import { valid } from './tokens.js';
+const { valid } = require('./tokens.js');
 
-export function adminGuard(req, res, next) {
+function adminGuard(req, res, next) {
   const auth = req.headers['authorization'] ?? '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!valid(token)) {
@@ -8,3 +8,5 @@ export function adminGuard(req, res, next) {
   }
   next();
 }
+
+module.exports = { adminGuard };

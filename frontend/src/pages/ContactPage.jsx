@@ -20,12 +20,14 @@ export default function ContactPage({ selectedBranch }) {
   }, [selectedBranch])
   
   return <>
-    <section className="page-banner page-banner--bg">
+    <section
+      className="page-banner page-banner--contact-bg"
+      style={activeBranch?.interior_image ? { backgroundImage: `url(${activeBranch.interior_image})` } : {}}
+    >
       <span className="eyebrow">WE WOULD LOVE TO SEE YOU</span>
       <h1>{t('contactTitle')}</h1>
       <p>Questions, celebrations, or just saying hello — we're here.</p>
     </section>
-    
     
     {/* Branch Details */}
     {activeBranch && (

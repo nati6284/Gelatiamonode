@@ -96,7 +96,10 @@ export default function MenuPage({items, onSelectItem, selectedBranch, categorie
   const filtered = search ? (Array.isArray(items) ? items : []).filter(x=>(x.name+' '+x.description).toLowerCase().includes(search.toLowerCase())&&x.available!==false) : (Array.isArray(items) ? items : [])
   
   return <>
-    <section className="page-banner page-banner--bg no-print">
+    <section
+      className="page-banner page-banner--menu-bg no-print"
+      style={selectedBranch?.interior_image ? { backgroundImage: `url(${selectedBranch.interior_image})` } : {}}
+    >
       <span className="eyebrow">FRESH FROM OUR KITCHEN</span>
       {selectedBranch && (
         <p className="branch-welcome">Welcome to {selectedBranch.name}</p>

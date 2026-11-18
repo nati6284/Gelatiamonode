@@ -8,7 +8,7 @@ export default function Home({items, onSelectItem, selectedBranch}) {
   const {t}=useI18n()
   return <>
     <section className="hero">
-      <div className="hero-image"></div>
+      <div className="hero-image" style={selectedBranch?.interior_image ? { backgroundImage: `url(${selectedBranch.interior_image})` } : {}}></div>
       <div className="hero-shade"></div>
       <div className="hero-content">
         <span className="eyebrow"><span></span>{t('eyebrow')}</span>
@@ -45,7 +45,7 @@ export default function Home({items, onSelectItem, selectedBranch}) {
     
     <section className="story-section" id="story">
       <div className="story-photo">
-        <img src="/home2.jpg" alt="Authentic Italian gelato" loading="lazy"/>
+        <img src={selectedBranch?.interior_image || '/home2.jpg'} alt="Authentic Italian gelato" loading="lazy"/>
         <div className="photo-note">
           <Coffee/>
           <span>Authentic Italian gelato</span>

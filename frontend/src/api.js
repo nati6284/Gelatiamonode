@@ -18,6 +18,7 @@ export const api = {
   popularByBranch: (branchCode) => request(`/menu/branch/${branchCode}/popular`),
   branches: () => request('/branches'),
   categories: () => request('/categories'),
+  submitFeedback: (payload) => request('/feedback', { method: 'POST', body: JSON.stringify(payload) }),
 
   // Auth
   adminLogin: payload => request('/admin/login', { method: 'POST', body: JSON.stringify(payload) }),
@@ -54,4 +55,8 @@ export const api = {
   getBranchPrices: (branchId, token) => request(`/admin/branches/${branchId}/menu`, { token }),
   updateBranchPrice: (branchId, menuItemId, fields, token) =>
     request(`/admin/branches/${branchId}/menu/${menuItemId}`, { method: 'PUT', token, body: JSON.stringify(fields) }),
+
+  // Feedback admin
+  adminFeedback: (token) => request('/admin/feedback', { token }),
+  deleteFeedback: (id, token) => request(`/admin/feedback/${id}`, { method: 'DELETE', token }),
 }

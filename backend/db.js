@@ -1,5 +1,4 @@
-
-import pg from 'pg';
+const pg = require('pg');
 
 const { Pool } = pg;
 
@@ -17,14 +16,13 @@ for (const key of required) {
 }
 
 const pool = new Pool({
-  host: process.env.DATABASE_HOST ,
-  port: Number(process.env.DATABASE_PORT || 5432),
-  database: process.env.DATABASE_NAME ,
-  user: process.env.DATABASE_USERNAME ,
-  password: process.env.DATABASE_PASSWORD  ,
+  host:     process.env.DATABASE_HOST,
+  port:     Number(process.env.DATABASE_PORT || 5432),
+  database: process.env.DATABASE_NAME,
+  user:     process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
   max: 3,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 10000,
 });
 
-export default pool;
-
+module.exports = pool;

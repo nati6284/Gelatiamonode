@@ -1,11 +1,11 @@
-import express from 'express';
-import { migrate } from './migrate.js';
-import publicRouter from './public.js';
+require('dotenv').config();
+const express = require('express');
+const { migrate } = require('./migrate.js');
+const publicRouter = require('./public.js');
+const adminRouter = require('./admin.js');
 
-import adminRouter from './admin.js';
-
-const PORT             = process.env.SERVER_PORT ;
-const CORS_ORIGIN      = process.env.CORS_ALLOWED_ORIGIN ;
+const PORT        = process.env.SERVER_PORT;
+const CORS_ORIGIN = process.env.CORS_ALLOWED_ORIGIN;
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api',       publicRouter);
 app.use('/api/admin', adminRouter);

@@ -1,6 +1,5 @@
-import { Router } from 'express';
-import pool from './db.js';
-import fetch from 'node-fetch';
+const { Router } = require('express');
+const pool = require('./db.js');
 
 const router = Router();
 
@@ -96,6 +95,21 @@ router.get('/menu/popular', async (_req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Submit feedback
+router.post('/feedback', async (req, res, next) => {
+  try {
+    const { branchId, phone, date, order, ratings, comment } = req.body ?? {};
+    if (!date || !ratings || typeof ratings !== 'object')
+      return res.status(400).json({ error: 'date and ratings are required' });
+    const { rows } = await pool.query(
+      `INSERT INTO feedback (branch_id, phone, visit_date, order_desc, ratings, comment)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [branchId ?? null, phone ?? null, date, order ?? null, JSON.stringify(ratings), comment ?? null],
+    );
+    res.status(201).json({ id: rows[0].id });
+  } catch (err) { next(err); }
+});
+
 // Image proxy — avoids browser CORS on external images (e.g. for print view)
 router.get('/image-proxy', async (req, res, next) => {
   const { url } = req.query;
@@ -131,4 +145,4 @@ function toMenuItemDTO(row) {
   };
 }
 
-export default router;
+module.exports = router;

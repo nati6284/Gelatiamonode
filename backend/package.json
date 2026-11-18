@@ -2,7 +2,6 @@
   "name": "cafe-api",
   "version": "1.0.0",
   "description": "Cafe REST API — Node.js/Express",
-  "type": "module",
   "main": "app.js",
   "scripts": {
     "start": "node --env-file=.env app.js",

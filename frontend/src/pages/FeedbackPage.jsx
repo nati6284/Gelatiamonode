@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
+import { api } from '../api'
 
 const RATINGS = [5, 4, 3, 2, 1]
 
@@ -37,24 +38,33 @@ function RatingRow({ label, value, onChange }) {
             {r}
           </label>
         ))}
+        
       </div>
     </div>
   )
 }
 
-export default function FeedbackPage() {
+export default function FeedbackPage({ selectedBranch }) {
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
+  const [branches, setBranches] = useState([])
+  const [branchId, setBranchId] = useState('')
   const [phone, setPhone] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [order, setOrder] = useState('')
   const [comment, setComment] = useState('')
+
+  useEffect(() => {
+    api.branches().then(data => setBranches(Array.isArray(data) ? data : [])).catch(() => {})
+  }, [])
 
   // ratings keyed by item name
   const [ratings, setRatings] = useState({})
 
   const setRating = (item, val) => setRatings(r => ({ ...r, [item]: val }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     // All rating items must be filled
     const allItems = CATEGORIES.flatMap(c => c.items)
@@ -63,8 +73,17 @@ export default function FeedbackPage() {
       alert(`Please rate: ${missing}`)
       return
     }
-    setSubmitted(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      await api.submitFeedback({ branchId: branchId || null, phone, date, order, ratings, comment })
+      setSubmitted(true)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      setSubmitError('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -94,7 +113,10 @@ export default function FeedbackPage() {
 
   return (
     <>
-      <section className="page-banner page-banner--feedback-bg">
+      <section
+        className="page-banner page-banner--feedback-bg"
+        style={selectedBranch?.interior_image ? { backgroundImage: `url(${selectedBranch.interior_image})` } : {}}
+      >
         <span className="eyebrow">CUSTOMER FEEDBACK</span>
         <h1>Thank you for <span style={{color:'var(--italian-red)'}}>dining</span> with us!</h1>
         <p>Your feedback is invaluable in helping us enhance your experience.</p>
@@ -131,6 +153,15 @@ export default function FeedbackPage() {
 
             {/* Contact info */}
             <div className="feedback-section">
+              <div className="field">
+                <label>Branch visited</label>
+                <select value={branchId} onChange={e => setBranchId(e.target.value)} required>
+                  <option value="">Select a branch…</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
               <div className="form-row">
                 <div className="field">
                   <label>Contact number</label>
@@ -181,8 +212,15 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            <button type="submit" className="button" style={{ width: '100%', justifyContent: 'center' }}>
-              Submit feedback
+            {submitError && (
+              <p style={{ color: 'var(--italian-red)', textAlign: 'center', marginBottom: '8px' }}>
+                {submitError}
+              </p>
+            )}
+
+            <button type="submit" className="button" disabled={submitting}
+              style={{ width: '100%', justifyContent: 'center', opacity: submitting ? 0.7 : 1 }}>
+              {submitting ? 'Submitting…' : 'Submit feedback'}
             </button>
           </form>
         </div>

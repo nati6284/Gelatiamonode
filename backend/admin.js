@@ -1,10 +1,9 @@
-import { Router } from 'express';
-import pool from './db.js';
-import { adminGuard } from './adminGuard.js';
-import { create as createToken, revoke as revokeToken } from './tokens.js';
+const { Router } = require('express');
+const pool = require('./db.js');
+const { adminGuard } = require('./adminGuard.js');
+const { create: createToken, revoke: revokeToken } = require('./tokens.js');
 
 const router = Router();
-
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'gelatiamo@admin#123';
@@ -128,14 +127,14 @@ router.get('/branches', adminGuard, async (_req, res, next) => {
 
 router.post('/branches', adminGuard, async (req, res, next) => {
   try {
-    const { name, address, phone, code, mapUrl, openingHours, latitude, longitude, active = true } = req.body ?? {};
+    const { name, address, phone, code, mapUrl, openingHours, latitude, longitude, active = true, interiorImage } = req.body ?? {};
     if (!name || !address || !code)
       return res.status(400).json({ error: 'name, address and code are required' });
     const { rows } = await pool.query(
-      `INSERT INTO branches (name, address, phone, code, map_url, opening_hours, latitude, longitude, active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      `INSERT INTO branches (name, address, phone, code, map_url, opening_hours, latitude, longitude, active, interior_image)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
       [name, address, phone ?? null, code, mapUrl ?? null,
-       openingHours ?? null, latitude ?? null, longitude ?? null, Boolean(active)],
+       openingHours ?? null, latitude ?? null, longitude ?? null, Boolean(active), interiorImage ?? null],
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -143,15 +142,15 @@ router.post('/branches', adminGuard, async (req, res, next) => {
 
 router.put('/branches/:id', adminGuard, async (req, res, next) => {
   try {
-    const { name, address, phone, code, mapUrl, openingHours, latitude, longitude, active } = req.body ?? {};
+    const { name, address, phone, code, mapUrl, openingHours, latitude, longitude, active, interiorImage } = req.body ?? {};
     const { rows } = await pool.query(
       `UPDATE branches
        SET name=$1, address=$2, phone=$3, code=$4, map_url=$5,
-           opening_hours=$6, latitude=$7, longitude=$8, active=$9
-       WHERE id=$10 RETURNING *`,
+           opening_hours=$6, latitude=$7, longitude=$8, active=$9, interior_image=$10
+       WHERE id=$11 RETURNING *`,
       [name, address, phone ?? null, code, mapUrl ?? null,
        openingHours ?? null, latitude ?? null, longitude ?? null,
-       Boolean(active), req.params.id],
+       Boolean(active), interiorImage ?? null, req.params.id],
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
@@ -283,7 +282,29 @@ router.delete('/branches/:branchId/menu/:menuItemId', adminGuard, async (req, re
   } catch (err) { next(err); }
 });
 
-// ── Legacy aliases (backward compat) ─────────────────────────────────────────
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+router.get('/feedback', adminGuard, async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT f.*, b.name AS branch_name
+       FROM feedback f
+       LEFT JOIN branches b ON b.id = f.branch_id
+       ORDER BY f.created_at DESC`,
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+router.delete('/feedback/:id', adminGuard, async (req, res, next) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM feedback WHERE id=$1', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Not found' });
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+// ── Legacy aliases ────────────────────────────────────────────────────────────
 
 router.get('/branches/:branchId/prices', adminGuard, async (req, res, next) => {
   const { rows: branchRows } = await pool.query(
@@ -320,4 +341,4 @@ router.put('/branches/:branchId/prices/:menuItemId', adminGuard, async (req, res
   res.json(rows[0]);
 });
 
-export default router;
+module.exports = router;

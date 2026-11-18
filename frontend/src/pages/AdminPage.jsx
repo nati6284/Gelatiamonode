@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, Edit, Trash2, Upload, Link as LinkIcon, LogOut, Lock, QrCode, DollarSign, ChevronLeft, Tag, Eye, EyeOff, X } from 'lucide-react'
+import { Plus, Edit, Trash2, Upload, Link as LinkIcon, LogOut, Lock, QrCode, DollarSign, ChevronLeft, Tag, Eye, EyeOff, X, MessageSquare, Star } from 'lucide-react'
 import { api } from '../api'
 import { CATEGORY_ORDER } from '../data'
 import { QRPrintCard } from '../pages/QRPage'
@@ -59,6 +59,10 @@ export default function AdminPage() {
   const [addCatFilter, setAddCatFilter] = useState('')
   const [addSearch, setAddSearch] = useState('')
 
+  const [feedbackList, setFeedbackList] = useState([])
+  const [feedbackBranchFilter, setFeedbackBranchFilter] = useState('')
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+
   const handleLogin = (t) => {
     sessionStorage.setItem('adminToken', t); setToken(t)
     window.dispatchEvent(new Event('adminAuthChange'))
@@ -79,6 +83,7 @@ export default function AdminPage() {
     if (activeTab !== 'branches') setPricingBranch(null)
     if (activeTab === 'menu') loadMenu()
     else if (activeTab === 'categories') loadCategories()
+    else if (activeTab === 'feedback') loadFeedback()
     else loadBranches()
   }, [token, activeTab])
 
@@ -95,6 +100,20 @@ export default function AdminPage() {
   }
   const loadCategories = async () => {
     try { const data = await api.adminCategories(token); setCategories(Array.isArray(data) ? data : []) } catch (err) { console.error(err) }
+  }
+
+  const loadFeedback = async () => {
+    setFeedbackLoading(true)
+    try { const data = await api.adminFeedback(token); setFeedbackList(Array.isArray(data) ? data : []) }
+    catch (err) { console.error(err) }
+    finally { setFeedbackLoading(false) }
+  }
+  const handleDeleteFeedback = async (id) => {
+    if (!window.confirm('Delete this feedback entry?')) return
+    try {
+      await api.deleteFeedback(id, token)
+      setFeedbackList(prev => prev.filter(f => f.id !== id))
+    } catch (err) { alert(err.message) }
   }
 
   const openBranchMenu = async (branch) => {
@@ -193,8 +212,8 @@ export default function AdminPage() {
     } catch (err) { alert(err.message) }
   }
 
-  const handleAddBranch = () => { setEditingItem({ name: '', address: '', phone: '', code: '', mapUrl: '', active: true }); setShowModal(true) }
-  const handleEditBranch = (branch) => { setEditingItem({ ...branch }); setShowModal(true) }
+  const handleAddBranch = () => { setEditingItem({ name: '', address: '', phone: '', code: '', mapUrl: '', active: true, interiorImage: '' }); setImageMode('url'); setShowModal(true) }
+  const handleEditBranch = (branch) => { setEditingItem({ ...branch, interiorImage: branch.interior_image || '' }); setImageMode('url'); setShowModal(true) }
   const handleDeleteBranch = async (id) => {
     if (!window.confirm('Delete this branch?')) return
     try { await api.deleteBranch(id, token); setBranches(branches.filter(b => b.id !== id)) }
@@ -238,6 +257,7 @@ export default function AdminPage() {
             <button className={activeTab === 'categories' ? 'active' : ''} onClick={() => setActiveTab('categories')}><Tag size={14} /> Categories</button>
             <button className={activeTab === 'branches' ? 'active' : ''} onClick={() => setActiveTab('branches')}>Branches</button>
             <button className={activeTab === 'qr' ? 'active' : ''} onClick={() => setActiveTab('qr')}><QrCode size={14} /> QR Codes</button>
+            <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => setActiveTab('feedback')}><MessageSquare size={14} /> Feedback</button>
           </div>
           <button className="button button-outline-dark" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <LogOut size={16} /> Sign Out
@@ -371,6 +391,57 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {activeTab === 'feedback' && (
+          <div className="admin-content">
+            <div className="admin-heading">
+              <h2>Customer Feedback</h2>
+              <button className="button button-outline-dark" onClick={loadFeedback}>Refresh</button>
+            </div>
+
+            {/* Branch filter */}
+            {feedbackList.length > 0 && (() => {
+              const branchNames = [...new Set(feedbackList.map(f => f.branch_name || 'Unknown branch'))]
+              return (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  <button className={feedbackBranchFilter === '' ? 'button button-small' : 'button button-small button-outline-dark'} onClick={() => setFeedbackBranchFilter('')}>All branches</button>
+                  {branchNames.map(name => (
+                    <button key={name} className={feedbackBranchFilter === name ? 'button button-small' : 'button button-small button-outline-dark'} onClick={() => setFeedbackBranchFilter(name)}>{name}</button>
+                  ))}
+                </div>
+              )
+            })()}
+
+            {feedbackLoading ? <p className="empty-state">Loading…</p> :
+             feedbackList.length === 0 ? <p className="empty-state">No feedback submissions yet.</p> : (
+              <div className="admin-list">
+                {feedbackList
+                  .filter(f => feedbackBranchFilter === '' || (f.branch_name || 'Unknown branch') === feedbackBranchFilter)
+                  .map(f => (
+                  <div key={f.id} className="admin-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <strong style={{ fontSize: '15px' }}>{f.branch_name || <em style={{ color: '#aaa' }}>Branch not specified</em>}</strong>
+                        <span style={{ marginLeft: '12px', color: '#888', fontSize: '13px' }}>
+                          {new Date(f.visit_date).toLocaleDateString()} · submitted {new Date(f.created_at).toLocaleString()}
+                        </span>
+                        {f.phone && <span style={{ marginLeft: '12px', color: '#666', fontSize: '13px' }}>{f.phone}</span>}
+                        {f.order_desc && <span style={{ marginLeft: '12px', color: '#666', fontSize: '13px' }}>Order: {f.order_desc}</span>}
+                      </div>
+                      <button className="danger-button" onClick={() => handleDeleteFeedback(f.id)}><Trash2 size={14}/></button>
+                    </div>
+                    <FeedbackRatingsGrid ratings={f.ratings} />
+                    {f.comment && (
+                      <p style={{ margin: 0, padding: '10px 12px', background: '#f9f9f9', borderRadius: '6px', fontSize: '14px', color: '#444', borderLeft: '3px solid var(--italian-green)' }}>
+                        "{f.comment}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {showAddModal && pricingBranch && (
@@ -456,6 +527,28 @@ export default function AdminPage() {
                   <div className="field"><label>Phone</label><input type="tel" value={editingItem.phone || ''} onChange={e => setEditingItem({ ...editingItem, phone: e.target.value })} /></div>
                   <div className="field"><label>Google Maps URL</label><input type="url" placeholder="https://maps.app.goo.gl/…" value={editingItem.mapUrl || ''} onChange={e => setEditingItem({ ...editingItem, mapUrl: e.target.value })} /></div>
                   <div className="field"><label>Opening Hours</label><input type="text" placeholder="e.g. Every day · 8:00 AM – 10:00 PM" value={editingItem.openingHours || ''} onChange={e => setEditingItem({ ...editingItem, openingHours: e.target.value })} /></div>
+                  <div className="field">
+                    <label>Interior Image</label>
+                    <div className="image-mode-toggle">
+                      <button type="button" className={imageMode === 'url' ? 'active' : ''} onClick={() => setImageMode('url')}><LinkIcon size={16}/> URL</button>
+                      <button type="button" className={imageMode === 'upload' ? 'active' : ''} onClick={() => setImageMode('upload')}><Upload size={16}/> Upload</button>
+                    </div>
+                    {imageMode === 'url'
+                      ? <input type="url" placeholder="https://example.com/interior.jpg" value={editingItem.interiorImage || ''} onChange={e => setEditingItem({ ...editingItem, interiorImage: e.target.value })} />
+                      : <div className="file-upload">
+                          <input type="file" accept="image/*" id="branchInteriorUpload" onChange={e => {
+                            const file = e.target.files[0]; if (!file) return
+                            if (file.size > 10 * 1024 * 1024) { alert('Image too large.'); e.target.value = ''; return }
+                            const reader = new FileReader()
+                            reader.onloadend = () => setEditingItem(prev => ({ ...prev, interiorImage: reader.result }))
+                            reader.readAsDataURL(file)
+                          }}/>
+                          <label htmlFor="branchInteriorUpload" className="file-upload-label"><Upload size={20}/><span>Choose image file</span></label>
+                        </div>
+                    }
+                    {editingItem.interiorImage && <div className="image-preview"><img src={editingItem.interiorImage} alt="Interior preview"/></div>}
+                    {editingItem.interiorImage && <button type="button" className="danger-button" style={{ marginTop: '6px', fontSize: '12px' }} onClick={() => setEditingItem({ ...editingItem, interiorImage: '' })}>Remove image</button>}
+                  </div>
                   <div className="field"><label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><input type="checkbox" checked={editingItem.active} onChange={e => setEditingItem({ ...editingItem, active: e.target.checked })}/> Active</label></div>
                   <div className="form-actions">
                     <button type="submit" className="button">Save Branch</button>
@@ -568,6 +661,29 @@ function BranchMenuPanel({
         </div>
       ))}
     </>
+  )
+}
+
+function FeedbackRatingsGrid({ ratings }) {
+  if (!ratings || typeof ratings !== 'object') return null
+  const RATING_COLORS = { 5: 'var(--italian-green)', 4: '#4caf50', 3: '#ff9800', 2: '#f44336', 1: 'var(--italian-red)' }
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+      {Object.entries(ratings).map(([item, score]) => (
+        <span key={item} style={{
+          display: 'inline-flex', alignItems: 'center', gap: '4px',
+          padding: '3px 8px', borderRadius: '20px', fontSize: '12px',
+          background: '#f3f3f3', color: '#333'
+        }}>
+          {item}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '18px', height: '18px', borderRadius: '50%', fontSize: '11px',
+            fontWeight: 700, color: '#fff', background: RATING_COLORS[score] || '#999'
+          }}>{score}</span>
+        </span>
+      ))}
+    </div>
   )
 }
 
