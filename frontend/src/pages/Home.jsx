@@ -39,7 +39,7 @@ export default function Home({items, onSelectItem, selectedBranch}) {
         <Link className="text-link" to="/menu">{t('viewMenu')} <ArrowRight size={16}/></Link>
       </div>
       <div className="menu-grid">
-        {items.filter(item => item.popular).map(item=><MenuCard key={item.id} item={item} onClick={onSelectItem}/>)}
+        {(Array.isArray(items) ? items : []).filter(item => item.popular).map(item=><MenuCard key={item.id} item={item} onClick={onSelectItem}/>)}
       </div>
     </section>
     

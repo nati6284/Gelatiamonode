@@ -1,51 +1,22 @@
 services:
   postgres:
     image: postgres:16
-    container_name: cafe-postgres
+    container_name: Gelatiamocafe-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-cafe_db}
-      POSTGRES_USER: ${POSTGRES_USER:-cafe_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cafe_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gelatiamo_db}
+      POSTGRES_USER: ${POSTGRES_USER:-gelatiamo_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gelatiamo_dev_password}
     ports:
       - "5432:5432"
     volumes:
       - cafe_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cafe_user} -d ${POSTGRES_DB:-cafe_db}"]
+     
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gelatiamo_user} -d ${POSTGRES_DB:-gelatiamo_db}"]
       interval: 5s
       timeout: 5s
       retries: 10
-
-  backend:
-    build: ./backend
-    container_name: cafe-backend
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8080
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cafe_db}
-      DATABASE_USERNAME: ${POSTGRES_USER:-cafe_user}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-cafe_dev_password}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
-      CORS_ALLOWED_ORIGIN: ${FRONTEND_URL:-http://localhost:5173}
-    ports:
-      - "8080:8080"
-
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api}
-    container_name: cafe-frontend
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
 
 volumes:
   cafe_pgdata:

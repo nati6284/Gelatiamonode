@@ -1,0 +1,16 @@
+{
+  "name": "cafe-api",
+  "version": "1.0.0",
+  "description": "Cafe REST API — Node.js/Express",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node --env-file=.env app.js",
+    "dev": "node --env-file=.env --watch app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.23.1"
+  }
+}

@@ -83,8 +83,8 @@ function AppShell() {
   }, [])
 
   useEffect(() => {
-    api.branches().then(setBranches).catch(console.error)
-    api.categories().then(setCategories).catch(console.error)
+    api.branches().then(data => setBranches(Array.isArray(data) ? data : [])).catch(console.error)
+    api.categories().then(data => setCategories(Array.isArray(data) ? data : [])).catch(console.error)
   }, [])
   
   // Load menu based on branch selection, and re-fetch when navigating to /menu
@@ -93,16 +93,18 @@ function AppShell() {
     setLoading(true)
     if (selectedBranch) {
       api.menuByBranch(selectedBranch.code)
-        .then(setMenuItems)
+        .then(data => setMenuItems(Array.isArray(data) ? data : null))
         .catch(err => {
           console.error('Failed to load branch menu:', err)
+          setMenuItems(null)
         })
         .finally(() => setLoading(false))
     } else {
       api.menu()
-        .then(setMenuItems)
+        .then(data => setMenuItems(Array.isArray(data) ? data : null))
         .catch(err => {
           console.error('Failed to load menu:', err)
+          setMenuItems(null)
         })
         .finally(() => setLoading(false))
     }

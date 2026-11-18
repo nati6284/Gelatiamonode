@@ -85,16 +85,16 @@ export default function AdminPage() {
   useEffect(() => { if (token) { loadCategories(); loadMenu() } }, [token])
 
   const loadMenu = async () => {
-    try { setMenuItems(await api.adminMenu(token)) } catch (err) { console.error(err) }
+    try { const data = await api.adminMenu(token); setMenuItems(Array.isArray(data) ? data : []) } catch (err) { console.error(err) }
   }
   const loadBranches = async () => {
     setLoading(true); setError('')
-    try { setBranches(await api.adminBranches(token)) }
+    try { const data = await api.adminBranches(token); setBranches(Array.isArray(data) ? data : []) }
     catch (err) { setError(err.message) }
     finally { setLoading(false) }
   }
   const loadCategories = async () => {
-    try { setCategories(await api.adminCategories(token)) } catch (err) { console.error(err) }
+    try { const data = await api.adminCategories(token); setCategories(Array.isArray(data) ? data : []) } catch (err) { console.error(err) }
   }
 
   const openBranchMenu = async (branch) => {
@@ -104,9 +104,10 @@ export default function AdminPage() {
   const refreshBranchMenu = async (branch) => {
     try {
       const data = await api.getBranchMenu(branch.id, token)
-      setBranchMenuItems(data)
+      const validData = Array.isArray(data) ? data.filter(p => p.menuItem != null) : []
+      setBranchMenuItems(validData)
       const edits = {}
-      data.forEach(p => { edits[p.menuItem.id] = { price: p.price, available: p.available, branchImage: p.branchImage || '' } })
+      validData.forEach(p => { edits[p.menuItem.id] = { price: p.price, available: p.available, branchImage: p.branchImage || '' } })
       setPriceEdits(edits)
     } catch (err) { alert(err.message) }
   }

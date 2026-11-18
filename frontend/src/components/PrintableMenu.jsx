@@ -29,7 +29,7 @@ export default function PrintableMenu({ items, branch, categories }) {
   const [imageMap, setImageMap] = useState({})
 
   useEffect(() => {
-    if (!items || items.length === 0) return
+    if (!items || !Array.isArray(items) || items.length === 0) return
     const load = async () => {
       const entries = await Promise.all(
         items
@@ -51,12 +51,12 @@ export default function PrintableMenu({ items, branch, categories }) {
     load()
   }, [items])
   // Group items by category in order
-  const categoryOrder = categories && categories.length > 0
+  const categoryOrder = Array.isArray(categories) && categories.length > 0
     ? categories.map(c => c.name)
     : []
 
   const grouped = {}
-  items.forEach(item => {
+  ;(Array.isArray(items) ? items : []).forEach(item => {
     if (item.available === false) return
     if (!grouped[item.category]) grouped[item.category] = []
     grouped[item.category].push(item)

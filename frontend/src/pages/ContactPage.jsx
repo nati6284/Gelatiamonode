@@ -10,7 +10,7 @@ export default function ContactPage({ selectedBranch }) {
   const [activeBranch, setActiveBranch] = useState(selectedBranch)
   
   useEffect(() => {
-    api.branches().then(setBranches).catch(console.error)
+    api.branches().then(data => setBranches(Array.isArray(data) ? data : [])).catch(console.error)
   }, [])
   
   useEffect(() => {

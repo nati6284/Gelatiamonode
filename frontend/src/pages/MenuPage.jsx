@@ -13,7 +13,7 @@ export default function MenuPage({items, onSelectItem, selectedBranch, categorie
 
   // Build ordered category list: use API categories if available, fall back to CATEGORY_ORDER
   const categoryOrder = useMemo(() => {
-    if (categories && categories.length > 0)
+    if (Array.isArray(categories) && categories.length > 0)
       return categories.map(c => c.name)
     return CATEGORY_ORDER
   }, [categories])
@@ -21,7 +21,7 @@ export default function MenuPage({items, onSelectItem, selectedBranch, categorie
   // Group items by category
   const groupedByCategory = useMemo(() => {
     const groups = {}
-    items.forEach(item => {
+    ;(Array.isArray(items) ? items : []).forEach(item => {
       if (!groups[item.category]) groups[item.category] = []
       groups[item.category].push(item)
     })
@@ -93,7 +93,7 @@ export default function MenuPage({items, onSelectItem, selectedBranch, categorie
     }
   }, [categories_sorted, activeCategory])
   
-  const filtered = search ? items.filter(x=>(x.name+' '+x.description).toLowerCase().includes(search.toLowerCase())&&x.available!==false) : items
+  const filtered = search ? (Array.isArray(items) ? items : []).filter(x=>(x.name+' '+x.description).toLowerCase().includes(search.toLowerCase())&&x.available!==false) : (Array.isArray(items) ? items : [])
   
   return <>
     <section className="page-banner page-banner--bg no-print">

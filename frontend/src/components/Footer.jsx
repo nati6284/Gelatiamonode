@@ -18,7 +18,7 @@ export default function Footer() {
   const [branches, setBranches] = useState([])
 
   useEffect(() => {
-    api.branches().then(setBranches).catch(() => {})
+    api.branches().then(data => setBranches(Array.isArray(data) ? data : [])).catch(() => {})
   }, [])
 
   return (

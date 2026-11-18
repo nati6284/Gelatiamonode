@@ -146,7 +146,7 @@ export default function QRPage() {
   const [branches, setBranches] = useState([])
 
   useEffect(() => {
-    api.branches().then(setBranches).catch(console.error)
+    api.branches().then(data => setBranches(Array.isArray(data) ? data : [])).catch(console.error)
   }, [])
 
   return <>
